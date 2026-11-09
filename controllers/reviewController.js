@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI("AQ.Ab8RN6Lw0LkAFkrZBFsPrUL3RHpsWgNqC74cXPcmKTuWtnUF6g");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generateReview = async (req, res) => {
   // 🌟 FIX: variables ko try block ke bahar define karein taki catch block bhi inhe dekh sake!
