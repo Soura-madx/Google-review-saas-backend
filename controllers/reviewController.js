@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenerativeAI("AQ.Ab8RN6Lw0LkAFkrZBFsPrUL3RHpsWgNqC74cXPcmKTuWtnUF6g");
 
 const generateReview = async (req, res) => {
   // 🌟 FIX: variables ko try block ke bahar define karein taki catch block bhi inhe dekh sake!
@@ -11,7 +11,7 @@ const generateReview = async (req, res) => {
       return res.status(400).json({ success: false, message: "Cafe name and tag are required." });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const prompt = `You are a real customer leaving a 5-star Google review for a cafe/restaurant named "${cafeName}". 
     The highlight of your experience was: "${selectedTag}". 
