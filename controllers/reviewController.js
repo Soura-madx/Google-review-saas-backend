@@ -14,7 +14,7 @@ const generateReview = async (req, res) => {
       return res.status(400).json({ success: false, message: "Cafe name and tag are required." });
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
     const prompt = `You are a real customer leaving a 5-star Google review for a cafe/restaurant named "${cafeName}". 
     The highlight of your experience was: "${selectedTag}". 
