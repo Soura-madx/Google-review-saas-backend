@@ -2,6 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+
 const generateReview = async (req, res) => {
   // forcing render to update new code
   // 🌟 FIX: variables ko try block ke bahar define karein taki catch block bhi inhe dekh sake!
