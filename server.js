@@ -12,6 +12,11 @@ connectDB();
 app.use(cors());
 app.use(express.json()); 
 
+
+app.get('/', (req, res) => {
+  res.status(200).send("Backend is awake and running!");
+});
+
 // API Routes
 app.use('/api/reviews', require('./routes/reviewRoutes')); // Pehle wala Gemini route
 app.use('/api/auth', require('./routes/authRoutes'));      // Naya Auth route
