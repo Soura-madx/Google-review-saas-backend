@@ -3,11 +3,13 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generateReview = async (req, res) => {
+  // forcing render to update new code
   // 🌟 FIX: variables ko try block ke bahar define karein taki catch block bhi inhe dekh sake!
   const { cafeName, selectedTag } = req.body;
 
   try {
     if (!cafeName || !selectedTag) {
+    
       return res.status(400).json({ success: false, message: "Cafe name and tag are required." });
     }
 
