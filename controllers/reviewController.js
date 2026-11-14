@@ -3,22 +3,29 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const generateReview = async (req, res) => {
-  // forcing render to update new code
-  // 🌟 FIX: variables ko try block ke bahar define karein taki catch block bhi inhe dekh sake!
-  const { cafeName, selectedTag } = req.body;
+  // 🌟 NEW: Ab hume Array of tags, rating, aur category bhi milegi
+  const { businessName, category, tags, rating, cafeName, selectedTag } = req.body;
 
   try {
-    if (!cafeName || !selectedTag) {
-      return res.status(400).json({ success: false, message: "Cafe name and tag are required." });
+    // Backward compatibility (agar kisi purane QR code se request aaye toh crash na ho)
+    const finalName = businessName || cafeName;
+    const finalTags = tags || (selectedTag ? [selectedTag] : []);
+    const finalRating = rating || 5;
+    const finalCategory = category || 'cafe';
+
+    if (!finalName || finalTags.length === 0) {
+      return res.status(400).json({ success: false, message: "Business name and at least one tag are required." });
     }
 
+    // Standard Gemini 1.5 Flash Model
     const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
-    const prompt = `You are a real customer leaving a 5-star Google review for a cafe/restaurant named "${cafeName}". 
-    The highlight of your experience was: "${selectedTag}". 
-    Rules: Short (2 lines), natural Hinglish, SEO keywords like "best cafe", 1-2 emojis, NO hashtags.`;
+    // 🌟 SMART PROMPT: Ab yeh kisi bhi category (Salon, Gym, Clinic) ke hisaab se review likhega
+    const prompt = `You are a real customer leaving a ${finalRating}-star Google review for a ${finalCategory} business named "${finalName}". 
+    The highlights of your experience were: "${finalTags.join(', ')}". 
+    Rules: Short (2-3 lines), natural conversational Hinglish, SEO keywords for local business, 1-2 emojis, NO hashtags.`;
 
-    // 🌟 FIX: Timeout ko 15 seconds (15000ms) kiya gaya hai taaki Render ko process karne ka time mile
+    // 15 seconds Timeout Logic
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('AI_TIMEOUT')), 15000)
     );
@@ -38,44 +45,25 @@ const generateReview = async (req, res) => {
   } catch (error) {
     console.error("AI Error or Timeout:", error.message);
     
-    // 🌟 MASSIVE FALLBACK REVIEWS: Har category me 5 unique variations hain client ki demand ke liye
-    const fallbackReviews = {
-      "Delicious Food 😋": [
-        `${cafeName} ka food seriously bohot delicious hai! Definitely city ka best food. Highly recommended! 😋🥘`,
-        `Craving satisfied! ${cafeName} me khana ekdum fresh aur tasty tha. 🍔✨`,
-        `Taste itna badhiya tha ki maza hi aa gaya. ${cafeName} is a must-visit for food lovers! 🍕👌`,
-        `Paisa vasool taste! ${cafeName} ki dishes sach me out of this world hain. Best cafe experience. 🌮🔥`,
-        `Quality aur taste me koi compromise nahi. ${cafeName} me kha kar dil khush ho gaya. 🤤🍽️`
-      ],
-      "Great Vibe & Aesthetic ✨": [
-        `${cafeName} ka vibe aur aesthetic ekdum top-notch hai. Doston ke sath chill karne ke liye best cafe! ✨`,
-        `Perfect aesthetic aur relaxing vibe at ${cafeName}. Highly recommend! 📸🌟`,
-        `Interior aur lighting bohot aesthetic hai. ${cafeName} me photogenic spots ki kami nahi. 🛋️😍`,
-        `Bohot hi chill environment tha. Weekend vibes ke liye ${cafeName} se better kuch nahi! 🎶🥂`,
-        `Peaceful aur classy aesthetic! Date ya dosto ke hangout ke liye ${cafeName} perfect hai. ✨🪴`
-      ],
-      "Best Coffee in Town ☕": [
-        `Agar aapko acchi coffee chahiye, toh ${cafeName} is the must-visit place. Amazing taste! ☕`,
-        `Best coffee experience in the city! Love it here at ${cafeName}. ☕❤️`,
-        `Inki coffee ka aroma aur taste dono kamaal ke hain. ${cafeName} really serves the best coffee! 🤎✨`,
-        `Sham ki coffee aur ${cafeName} ka mahol, dono milkar ekdum perfect combo banate hain. ☕👌`,
-        `Strong, flavorful aur fresh! ${cafeName} is my new favorite spot for coffee runs. ☕🏃‍♂️`
-      ],
-      "Amazing Service 🤝": [
-        `${cafeName} ki service aur staff bohot polite hain. Great experience! 🤝`,
-        `Super fast service aur welcoming staff. ${cafeName} is simply the best. 💯🙌`,
-        `Staff ka nature bohot accha tha. ${cafeName} me customer ko bohot special feel karwate hain. 🌟👨‍🍳`,
-        `Bina kisi delay ke order serve hua. ${cafeName} ki service sach me top-class hai! ⏱️🍽️`,
-        `Hospitality ekdum 10/10! ${cafeName} ki team bohot dhyan rakhti hai. Highly impressed. 👏😊`
-      ]
-    };
+    // 🌟 DYNAMIC FALLBACK: Ab 10 categories hain, isliye static text ki jagah 
+    // hum "Tags" ko mila kar ek smart fallback sentence banayenge.
+    
+    const finalNameFallback = businessName || cafeName || "this place";
+    const cleanTags = finalTags.map(tag => tag.replace(/[\u1000-\uFFFF]+/g, "").trim()).join(" aur ");
+    
+    const fallbackTemplates = [
+      `Mera experience ${finalNameFallback} me sach me amazing tha! Inka ${cleanTags} bohot pasand aaya. Definitely recommended! 🌟`,
+      `${finalNameFallback} ki service ekdum top-class hai. Khaas kar ${cleanTags} ne toh dil jeet liya. Highly recommended! 💯`,
+      `Agar aap ek acchi jagah dhund rahe hain, toh ${finalNameFallback} is the best! ${cleanTags} ke liye ${finalRating}/5 stars. 👌`,
+      `Very happy with the service at ${finalNameFallback}! The highlights were the ${cleanTags}. Zarur visit karein! ✨`,
+      `Quality aur service me koi compromise nahi. ${finalNameFallback} me experience bohot badhiya raha, especially ${cleanTags}. 👏`
+    ];
 
-    // Randomization Logic
-    const selectedArray = fallbackReviews[selectedTag] || fallbackReviews["Great Vibe & Aesthetic ✨"];
-    const randomIndex = Math.floor(Math.random() * selectedArray.length);
-    const finalReview = selectedArray[randomIndex];
+    // Pick a random fallback
+    const randomIndex = Math.floor(Math.random() * fallbackTemplates.length);
+    const finalReview = fallbackTemplates[randomIndex];
 
-    // Status 200 hi jayega taki customer ka page crash na ho
+    // Status 200 hi jayega taki customer ka page na fasa rahe
     res.status(200).json({ 
       success: true, 
       reviewText: finalReview,
