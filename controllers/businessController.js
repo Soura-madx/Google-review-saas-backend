@@ -11,7 +11,10 @@ const getBusinessProfile = async (req, res) => {
 // @access  Public (Customer QR scan karne ke baad call karega)
 const getPublicBusinessInfo = async (req, res) => {
   try {
-    const business = await Business.findById(req.params.id).select('cafeName googleReviewLink');
+    // 🌟 FIX: Ab frontend ko category aur naya naam dono jayega
+    const business = await Business.findById(req.params.id).select(
+      'businessName cafeName businessCategory googleReviewLink themeDetails'
+    );
     
     if (business) {
       res.status(200).json(business);
