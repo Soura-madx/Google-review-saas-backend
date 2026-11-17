@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
 
 const businessSchema = new mongoose.Schema({
-  // Naye users ke liye
   businessName: { type: String }, 
   businessCategory: { type: String, default: 'cafe' },
-  
-  // Purane users ki compatibility ke liye (required hata diya hai)
   cafeName: { type: String }, 
-  
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // bcrypt hashed
+  password: { type: String, required: true },
   googleReviewLink: { type: String, required: true },
+  
+  // 🌟 NAYA FEATURE: Trapdoor toggle flag (Default true rahega)
+  enableTrapdoor: { type: Boolean, default: true },
+
   themeDetails: {
     primaryColor: { type: String, default: '#000000' },
     logoUrl: { type: String, default: '' }

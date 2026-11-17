@@ -8,7 +8,7 @@ const generateToken = (id) => {
 
 // @route   POST /api/auth/register
 const registerBusiness = async (req, res) => {
-  const { businessName, businessCategory, cafeName, email, password, googleReviewLink } = req.body;
+  const { businessName, businessCategory, cafeName, email, password, googleReviewLink, enableTrapdoor } = req.body;
 
   try {
     const businessExists = await Business.findOne({ email });
@@ -19,8 +19,10 @@ const registerBusiness = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Dhyan dein: Hum dono me naam save kar rahe hain safety ke liye
     const finalName = businessName || cafeName; 
+
+    // 🌟 Trapdoor value save karna (agar undefined ho toh true maan lo)
+    const trapdoorSetting = enableTrapdoor !== undefined ? enableTrapdoor : true;
 
     const business = await Business.create({
       businessName: finalName,
@@ -29,6 +31,7 @@ const registerBusiness = async (req, res) => {
       email,
       password: hashedPassword,
       googleReviewLink,
+      enableTrapdoor: trapdoorSetting,
     });
 
     if (business) {
@@ -38,6 +41,7 @@ const registerBusiness = async (req, res) => {
         businessCategory: business.businessCategory,
         email: business.email,
         googleReviewLink: business.googleReviewLink,
+        enableTrapdoor: business.enableTrapdoor,
         token: generateToken(business._id),
       });
     }
@@ -61,14 +65,38 @@ const loginBusiness = async (req, res) => {
         businessCategory: business.businessCategory || 'cafe',
         email: business.email,
         googleReviewLink: business.googleReviewLink,
+        enableTrapdoor: business.enableTrapdoor,
         token: generateToken(business._id),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
+    console.error("Server error", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-module.exports = { registerBusiness, loginBusiness };
+// @route   PUT /api/business/toggle-trapdoor (Dashboard se toggle change karne ke liye)
+const updateTrapdoorSetting = async (req, res) => {
+  try {
+    const { enableTrapdoor } = req.body;
+    const businessId = req.business._id; // Auth middleware se milega
+
+    const updatedBusiness = await Business.findByIdAndUpdate(
+      businessId,
+      { enableTrapdoor },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      enableTrapdoor: updatedBusiness.enableTrapdoor,
+      message: "Trapdoor setting updated successfully!"
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update setting', error: error.message });
+  }
+};
+
+module.exports = { registerBusiness, loginBusiness, updateTrapdoorSetting };
