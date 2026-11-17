@@ -11,9 +11,9 @@ const getBusinessProfile = async (req, res) => {
 // @access  Public (Customer QR scan karne ke baad call karega)
 const getPublicBusinessInfo = async (req, res) => {
   try {
-    // 🌟 FIX: Ab frontend ko category aur naya naam dono jayega
+    // 🌟 FIX: Ab frontend ko 'enableTrapdoor' field bhi milegi!
     const business = await Business.findById(req.params.id).select(
-      'businessName cafeName businessCategory googleReviewLink themeDetails'
+      'businessName cafeName businessCategory googleReviewLink themeDetails enableTrapdoor'
     );
     
     if (business) {
